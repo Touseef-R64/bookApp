@@ -20,8 +20,9 @@ const db = mongoose.connection
 db.on('error', error => console.error(error))
 db.once('open', () => console.error('connected to mongoose') )
 
-
-app.use(express.static('public'))
+var cors = require('cors');
+app.use(cors());
+app.use(express.json())
 app.use(bodyparser.urlencoded({ limit: '10mb', extended: false }))
 
 
