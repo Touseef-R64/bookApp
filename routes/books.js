@@ -49,7 +49,7 @@ router.post('/', upload.single('cover') , async (req,res) => {
             title: req.body.title,
             author: req.body.author,
             published_date: new Date(req.body.published_date),
-            page_count: req.body.page_count,
+            genre: req.body.genre,
             coverImageName: fileName,
             description: req.body.description
         })
@@ -63,6 +63,49 @@ router.post('/', upload.single('cover') , async (req,res) => {
             removeBookCover(book.coverImageName)
         }
         renderNewPage(res, book,  true)
+    }
+})
+
+router.put(`/:id`, upload.single('cover') , async (req,res) => {
+    const fileName = req.file != null ? req?.file?.filename : null 
+        const book = await Book.findById(req.params._id)
+    
+    try{
+        if(book){
+            const update = await book.update({
+                title: req?.body?.title || book.title,
+                author: req?.body?.author || book.author,
+                published_date: new Date(req?.body?.published_date || book.published_date),
+                genre: req?.body?.genre || book.genre,
+                coverImageName: fileName || book.coverImageName,
+                description: req?.body?.description || book.description
+            })
+            res.send(200,'update Successfull' )
+
+        }else{
+            res.send(404,'could not find the designated book')
+        }
+        
+    }catch{
+        res.send(501,'Could not Update')
+    }
+})
+
+router.delete(`/:id`,  async (req,res) => {
+    
+        const book = await Book.findById(req.params._id)
+    
+    try{
+        if(book){
+            removeBookCover(book.coverImageName)
+            const remove = await book.delete()
+            res.send(200, 'delete Successfull!')
+        }else{
+            res.send(404,'could not find the designated book')
+        }
+        
+    }catch{
+        res.send(501,'Could not Delete')
     }
 })
 
