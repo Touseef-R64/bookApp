@@ -32,6 +32,70 @@ const BookModal = ({ book, title, open, setOpen }: props) => {
 
   const OnSubmit = () => {};
 
+  const handleprofileimg = (e) => {
+    const namef = e.target.name;
+    let [file] = e.target.files;
+
+    if (file) {
+      let limit = file.size / 1024;
+      let type = file.type.split("/")[0];
+      if (type !== "image") {
+        window.alert("Please insert an image");
+      } else if (limit > 150) {
+        window.alert("File Cannot Be Greater than 150kb");
+      } else {
+        setForm({ ...formInfo, [namef]: file });
+      }
+    }
+  };
+
+  const submitHandler = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const formreqdata = new FormData();
+    formreqdata.append("file", file);
+    formreqdata.append("title", formInfo.title);
+    formreqdata.append("author", formInfo.author);
+    formreqdata.append("description", formInfo.description);
+    formreqdata.append("genre", formInfo.genre);
+    formreqdata.append("published_date", formInfo.published_date);
+
+    try {
+      await axios.post(`${urlapi}/profile`, formreqdata).then((res) => {
+        if (res.status === 200) {
+          toast.success("data added successful", {
+            position: "top-right",
+            autoClose: 4000,
+            hideProgressBar: false,
+            closeOnClick: true,
+            pauseOnHover: true,
+            draggable: true,
+            progress: undefined,
+          });
+        } else {
+          toast.error("an error occured pls try again", {
+            position: "top-right",
+            autoClose: 4000,
+            hideProgressBar: false,
+            closeOnClick: true,
+            pauseOnHover: true,
+            draggable: true,
+            progress: undefined,
+          });
+        }
+      });
+    } catch (err) {
+      toast.error(err.response?.data?.message || "error occured", {
+        position: "top-right",
+        autoClose: 4000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+      });
+    }
+  };
+
   if (open && documentMouned)
     return (
       <div>
@@ -89,8 +153,32 @@ const BookModal = ({ book, title, open, setOpen }: props) => {
                   </div>
                   <div className="relative ">
                     <div className="w-[140px] overflow-hidden  rounded-[10px] h-[200px] relative">
-                      <Image src={"/defaultCover.jpg"} alt="CoverImage" fill />
+                      <Image
+                        src={
+                          (formInfo?.coverImageName &&
+                            (typeof formInfo?.coverImageName === "string"
+                              ? formInfo?.coverImageName
+                              : URL?.createObjectURL(
+                                  formInfo?.coverImageName
+                                ))) ||
+                          "/defaultCover.jpg"
+                        }
+                        alt="CoverImage"
+                        fill
+                      />
                     </div>
+                    <input
+                      ref={ref}
+                      onChange={handleprofileimg}
+                      type="file"
+                      className=""
+                      name={"profileImage"}
+                    ></input>
+                    <button
+                      type="button"
+                      onClick={() => ref.current.click()}
+                      className={``}
+                    ></button>
                   </div>
 
                   <FieldInput
