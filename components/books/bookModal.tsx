@@ -1,7 +1,8 @@
-import { faXmark } from "@fortawesome/free-solid-svg-icons";
+import { faPen, faXmark } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import React, {
   Dispatch,
+  FormEvent,
   SetStateAction,
   useEffect,
   useRef,
@@ -10,7 +11,9 @@ import React, {
 import { createPortal } from "react-dom";
 import FieldInput from "../forms/fieldInput";
 import Image from "next/image";
-import { blob } from "stream/consumers";
+import { blob, json } from "stream/consumers";
+import axios from "axios";
+import { toast } from "react-toastify";
 
 interface props {
   book?: bookIType;
@@ -41,10 +44,10 @@ const BookModal = ({ book, title, open, setOpen }: props) => {
       let type = file.type.split("/")[0];
       if (type !== "image") {
         window.alert("Please insert an image");
-      } else if (limit > 150) {
-        window.alert("File Cannot Be Greater than 150kb");
+      } else if (limit > 15000) {
+        window.alert("File Cannot Be Greater than 1.5mb");
       } else {
-        setForm({ ...formInfo, [namef]: file });
+        setFile(file);
       }
     }
   };
@@ -52,37 +55,103 @@ const BookModal = ({ book, title, open, setOpen }: props) => {
   const submitHandler = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const formreqdata = new FormData();
-    formreqdata.append("file", file);
+    if (file) {
+      formreqdata.append("file", file);
+    }
     formreqdata.append("title", formInfo.title);
     formreqdata.append("author", formInfo.author);
     formreqdata.append("description", formInfo.description);
     formreqdata.append("genre", formInfo.genre);
-    formreqdata.append("published_date", formInfo.published_date);
+    formreqdata.append(
+      "published_date",
+      JSON.stringify(formInfo.published_date)
+    );
 
     try {
-      await axios.post(`${urlapi}/profile`, formreqdata).then((res) => {
-        if (res.status === 200) {
-          toast.success("data added successful", {
-            position: "top-right",
-            autoClose: 4000,
-            hideProgressBar: false,
-            closeOnClick: true,
-            pauseOnHover: true,
-            draggable: true,
-            progress: undefined,
-          });
-        } else {
-          toast.error("an error occured pls try again", {
-            position: "top-right",
-            autoClose: 4000,
-            hideProgressBar: false,
-            closeOnClick: true,
-            pauseOnHover: true,
-            draggable: true,
-            progress: undefined,
-          });
-        }
+      await axios
+        .post(`${process.env.NEXT_PUBLIC_BACKENDURL}books/`, formreqdata)
+        .then((res) => {
+          if (res.status === 200) {
+            toast.success("data added successful", {
+              position: "top-right",
+              autoClose: 4000,
+              hideProgressBar: false,
+              closeOnClick: true,
+              pauseOnHover: true,
+              draggable: true,
+              progress: undefined,
+            });
+            setOpen(false);
+          } else {
+            toast.error("an error occured pls try again", {
+              position: "top-right",
+              autoClose: 4000,
+              hideProgressBar: false,
+              closeOnClick: true,
+              pauseOnHover: true,
+              draggable: true,
+              progress: undefined,
+            });
+          }
+        });
+    } catch (err) {
+      toast.error(err.response?.data?.message || "error occured", {
+        position: "top-right",
+        autoClose: 4000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
       });
+    }
+  };
+
+  const UpdateHandler = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const formreqdata = new FormData();
+    if (file) {
+      formreqdata.append("file", file);
+    }
+    formreqdata.append("title", formInfo.title);
+    formreqdata.append("author", formInfo.author);
+    formreqdata.append("description", formInfo.description);
+    formreqdata.append("genre", formInfo.genre);
+    formreqdata.append(
+      "published_date",
+      JSON.stringify(formInfo.published_date)
+    );
+
+    try {
+      await axios
+        .put(
+          `${process.env.NEXT_PUBLIC_BACKENDURL}books/${book?._id}`,
+          formreqdata
+        )
+        .then((res) => {
+          if (res.status === 200) {
+            toast.success("data update successful", {
+              position: "top-right",
+              autoClose: 4000,
+              hideProgressBar: false,
+              closeOnClick: true,
+              pauseOnHover: true,
+              draggable: true,
+              progress: undefined,
+            });
+            setOpen(false);
+          } else {
+            toast.error("an error occured pls try again", {
+              position: "top-right",
+              autoClose: 4000,
+              hideProgressBar: false,
+              closeOnClick: true,
+              pauseOnHover: true,
+              draggable: true,
+              progress: undefined,
+            });
+          }
+        });
     } catch (err) {
       toast.error(err.response?.data?.message || "error occured", {
         position: "top-right",
@@ -128,6 +197,9 @@ const BookModal = ({ book, title, open, setOpen }: props) => {
                 className="w-full"
                 onSubmit={(e) => {
                   e.preventDefault();
+                  if (book?._id) {
+                    UpdateHandler(e);
+                  } else submitHandler(e);
                 }}
               >
                 <div className="flex m-[20px_30px] justify-between flex-wrap gap-[20px]">
@@ -155,30 +227,30 @@ const BookModal = ({ book, title, open, setOpen }: props) => {
                     <div className="w-[140px] overflow-hidden  rounded-[10px] h-[200px] relative">
                       <Image
                         src={
-                          (formInfo?.coverImageName &&
-                            (typeof formInfo?.coverImageName === "string"
-                              ? formInfo?.coverImageName
-                              : URL?.createObjectURL(
-                                  formInfo?.coverImageName
-                                ))) ||
-                          "/defaultCover.jpg"
+                          (!file
+                            ? `/uploads/bookCovers/${formInfo?.coverImageName}`
+                            : URL?.createObjectURL(file)) || "/defaultCover.jpg"
                         }
                         alt="CoverImage"
                         fill
                       />
+                      <input
+                        ref={ref}
+                        onChange={handleprofileimg}
+                        type="file"
+                        className=" w-[2px] h-[1px] absolute"
+                        name={"file"}
+                        accept="images"
+                      ></input>
                     </div>
-                    <input
-                      ref={ref}
-                      onChange={handleprofileimg}
-                      type="file"
-                      className=""
-                      name={"profileImage"}
-                    ></input>
+
                     <button
                       type="button"
                       onClick={() => ref.current.click()}
-                      className={``}
-                    ></button>
+                      className={` absolute bottom-0 right-0 rounded-full bg-white shadow-main text-main-100 text-[20px] cursor-pointer mr-[-15px] mb-[-15px] w-[50px] h-[50px]`}
+                    >
+                      <FontAwesomeIcon icon={faPen} />
+                    </button>
                   </div>
 
                   <FieldInput
@@ -208,6 +280,11 @@ const BookModal = ({ book, title, open, setOpen }: props) => {
                     placeholder="Add Description"
                     required
                   />
+                </div>
+                <div className="flex items-center justify-end p-[10px_20px]">
+                  <button className="bg-main-100 p-[5px_10px] rounded-[5px] text-white shadow-main">
+                    Add
+                  </button>
                 </div>
               </form>
             </div>

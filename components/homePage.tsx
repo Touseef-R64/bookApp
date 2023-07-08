@@ -5,13 +5,16 @@ import BookModal from "./books/bookModal";
 
 const HomePage = () => {
   const [books, setbooks] = useState<bookIType[]>([]);
-  const [openmodal, setOpen] = useState(true);
+  const [openmodal, setOpen] = useState(false);
   const getBooks = () => {
-    axios.get(`${process.env.NEXT_PUBLIC_BACKENDURL}`).then((res) => {
-      if (res.data) {
-        setbooks(res.data);
-      }
-    });
+    try {
+      axios.get(`${process.env.NEXT_PUBLIC_BACKENDURL}`).then((res) => {
+        if (res.data) {
+          console.log(res.data.books);
+          setbooks(res.data.books);
+        }
+      });
+    } catch {}
   };
 
   useEffect(() => {
@@ -20,7 +23,7 @@ const HomePage = () => {
 
   return (
     <div className="w-full  h-full max-w-[1200px] m-auto ">
-      <div className="flex items-center p-[10px_20px] border-b-[2px] border-nuetral-100 mt-[50px] ">
+      <div className="flex  items-center p-[10px_20px] border-b-[2px] border-nuetral-100 mt-[50px] ">
         <button
           onClick={() => {
             setOpen(true);
@@ -31,7 +34,7 @@ const HomePage = () => {
         </button>
       </div>
       {books.length > 0 ? (
-        <div>
+        <div className="flex flex-wrap py-[40px] justify-evenly gap-[20px]">
           {books.map((book, idx) => {
             return (
               <React.Fragment key={idx}>
@@ -43,7 +46,9 @@ const HomePage = () => {
       ) : (
         <div> no Books found </div>
       )}
-      <BookModal title="Add Book" open={openmodal} setOpen={setOpen} />
+      {openmodal && (
+        <BookModal title="Add Book" open={openmodal} setOpen={setOpen} />
+      )}
     </div>
   );
 };
