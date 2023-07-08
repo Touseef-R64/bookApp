@@ -7,8 +7,9 @@ interface bookIType {
   title: string;
   description: string;
   published_date: Date;
-  page_count: number;
   createdAt?: Date;
+  genre: string;
   coverImageName: string;
-  author: authorIType;
+  author: string;
+  [key: string]: any;
 }

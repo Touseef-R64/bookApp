@@ -62,7 +62,6 @@ router.post('/', upload.single('cover') , async (req,res) => {
         if(book.coverImageName != null){
             removeBookCover(book.coverImageName)
         }
-        renderNewPage(res, book,  true)
     }
 })
 
@@ -71,6 +70,10 @@ router.put(`/:id`, upload.single('cover') , async (req,res) => {
         const book = await Book.findById(req.params._id)
     
     try{
+        if(fileName){
+            removeBookCover(book.coverImageName)
+
+        }
         if(book){
             const update = await book.update({
                 title: req?.body?.title || book.title,

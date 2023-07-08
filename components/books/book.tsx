@@ -12,7 +12,8 @@ const Book = ({ bookItem }: props) => {
         <Image src={bookItem?.coverImageName || ""} fill alt="book Cover" />
       </div>
       <p className="text-[20px] mt-[10px] font-[600]">{bookItem?.title}</p>
-      <p className="text-[14px] text-neutral-400">{bookItem?.author?.name}</p>
+      <p className="text-[14px] text-neutral-400">{bookItem?.author}</p>
+      <p>{bookItem?.description}</p>
     </div>
   );
 };

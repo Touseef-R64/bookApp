@@ -1,0 +1,12 @@
+POST http://localhost:4000/authors/
+content-type: application/json
+
+{
+    "name": "Alan"
+}
+
+###
+
+GET http://localhost:4000/
+content-type: application/json
+
