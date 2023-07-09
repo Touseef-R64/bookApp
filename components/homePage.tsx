@@ -21,8 +21,23 @@ const HomePage = () => {
     getBooks();
   }, []);
 
+  const handleChange = (book: bookIType, isAction: string) => {
+    if (isAction === "delete") {
+      setbooks((prev) => prev.filter((curr) => curr?._id !== book?._id));
+    } else if (isAction === "edit") {
+      let arr = books;
+      arr[arr.findIndex((curr) => curr?._id === book?._id)] = book;
+      console.log(arr);
+      setbooks([...arr]);
+    } else if (isAction === "add") {
+      let arr = books;
+      arr.unshift(book);
+      setbooks([...arr]);
+    }
+  };
+
   return (
-    <div className="w-full  h-full max-w-[1200px] m-auto ">
+    <div className="w-[calc(100%-60px)] pb-[100px]  h-full max-w-[1200px] m-auto ">
       <div className="flex  items-center p-[10px_20px] border-b-[2px] border-nuetral-100 mt-[50px] ">
         <button
           onClick={() => {
@@ -38,7 +53,7 @@ const HomePage = () => {
           {books.map((book, idx) => {
             return (
               <React.Fragment key={idx}>
-                <Book bookItem={book} />
+                <Book execFunc={handleChange} bookItem={book} />
               </React.Fragment>
             );
           })}
@@ -47,7 +62,12 @@ const HomePage = () => {
         <div> no Books found </div>
       )}
       {openmodal && (
-        <BookModal title="Add Book" open={openmodal} setOpen={setOpen} />
+        <BookModal
+          execFunc={handleChange}
+          title="Add Book"
+          open={openmodal}
+          setOpen={setOpen}
+        />
       )}
     </div>
   );

@@ -11,18 +11,19 @@ import React, {
 import { createPortal } from "react-dom";
 import FieldInput from "../forms/fieldInput";
 import Image from "next/image";
-import { blob, json } from "stream/consumers";
 import axios from "axios";
 import { toast } from "react-toastify";
+import { dateformateHandler } from "../../utils/dateformat";
 
 interface props {
   book?: bookIType;
   setOpen: Dispatch<SetStateAction<boolean>>;
   open: boolean;
   title?: string;
+  execFunc: (book: bookIType, isAction: string) => void;
 }
 
-const BookModal = ({ book, title, open, setOpen }: props) => {
+const BookModal = ({ book, title, open, execFunc, setOpen }: props) => {
   const [documentMouned, setDocumentMounted] = useState(false);
   const [formInfo, setForm] = useState<bookIType | null>(book || null);
   const [file, setFile] = useState();
@@ -32,8 +33,6 @@ const BookModal = ({ book, title, open, setOpen }: props) => {
   useEffect(() => {
     setDocumentMounted(true);
   }, []);
-
-  const OnSubmit = () => {};
 
   const handleprofileimg = (e) => {
     const namef = e.target.name;
@@ -55,9 +54,9 @@ const BookModal = ({ book, title, open, setOpen }: props) => {
   const submitHandler = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const formreqdata = new FormData();
-    if (file) {
-      formreqdata.append("file", file);
-    }
+
+    formreqdata.append("file", file);
+
     formreqdata.append("title", formInfo.title);
     formreqdata.append("author", formInfo.author);
     formreqdata.append("description", formInfo.description);
@@ -81,6 +80,7 @@ const BookModal = ({ book, title, open, setOpen }: props) => {
               draggable: true,
               progress: undefined,
             });
+            execFunc(formInfo, "add");
             setOpen(false);
           } else {
             toast.error("an error occured pls try again", {
@@ -110,16 +110,16 @@ const BookModal = ({ book, title, open, setOpen }: props) => {
   const UpdateHandler = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const formreqdata = new FormData();
-    if (file) {
-      formreqdata.append("file", file);
-    }
+
+    formreqdata.append("file", file);
+
     formreqdata.append("title", formInfo.title);
     formreqdata.append("author", formInfo.author);
     formreqdata.append("description", formInfo.description);
     formreqdata.append("genre", formInfo.genre);
     formreqdata.append(
       "published_date",
-      JSON.stringify(formInfo.published_date)
+      JSON.stringify(dateformateHandler(formInfo.published_date).standardDate)
     );
 
     try {
@@ -130,7 +130,7 @@ const BookModal = ({ book, title, open, setOpen }: props) => {
         )
         .then((res) => {
           if (res.status === 200) {
-            toast.success("data update successful", {
+            toast.success("Book updated successfully", {
               position: "top-right",
               autoClose: 4000,
               hideProgressBar: false,
@@ -139,6 +139,8 @@ const BookModal = ({ book, title, open, setOpen }: props) => {
               draggable: true,
               progress: undefined,
             });
+            execFunc(formInfo, "edit");
+
             setOpen(false);
           } else {
             toast.error("an error occured pls try again", {
@@ -174,13 +176,13 @@ const BookModal = ({ book, title, open, setOpen }: props) => {
               e.stopPropagation();
               setOpen(false);
             }}
-            className="fixed inset-0 flex items-center justify-center"
+            className="fixed inset-0 z-10 flex items-center cursor-pointer justify-center"
           >
             <div
               onClick={(e) => {
                 e.stopPropagation();
               }}
-              className="bg-white shadow-md border-[1px] w-full max-w-[800px]  border-nuetral-100 rounded-[10px] "
+              className="bg-white cursor-default shadow-md border-[1px] max-h-[80vh]  overflow-hidden overflow-y-auto w-[calc(100%-20px)] max-w-[800px]  border-nuetral-100 rounded-[10px] "
             >
               <div className="flex items-center justify-between p-[8px_20px] border-b-[1px] border-nuetral-100">
                 <p className="text-[18px] font-[600]">{title}</p>{" "}
@@ -188,7 +190,7 @@ const BookModal = ({ book, title, open, setOpen }: props) => {
                   onClick={() => {
                     setOpen(false);
                   }}
-                  className="text-main-100 font-[14px]"
+                  className="text-main-100 font-[14px] cursor-pointer"
                 >
                   <FontAwesomeIcon icon={faXmark} />
                 </p>
@@ -208,6 +210,7 @@ const BookModal = ({ book, title, open, setOpen }: props) => {
                       name="title"
                       setField={setForm}
                       title="Title"
+                      pattern="^[a-zA-Z0-9\s]+$"
                       type="text"
                       value={formInfo}
                       placeholder="Add Title"
@@ -218,6 +221,7 @@ const BookModal = ({ book, title, open, setOpen }: props) => {
                       setField={setForm}
                       title="Author"
                       type="text"
+                      pattern="/^[a-zA-Z0-9.()]+$/"
                       value={formInfo}
                       placeholder="Add Author"
                       required
@@ -227,9 +231,11 @@ const BookModal = ({ book, title, open, setOpen }: props) => {
                     <div className="w-[140px] overflow-hidden  rounded-[10px] h-[200px] relative">
                       <Image
                         src={
-                          (!file
-                            ? `/uploads/bookCovers/${formInfo?.coverImageName}`
-                            : URL?.createObjectURL(file)) || "/defaultCover.jpg"
+                          !file
+                            ? formInfo?.coverImageName
+                              ? `/uploads/bookCovers/${formInfo?.coverImageName}`
+                              : "/defaultCover.jpg"
+                            : URL?.createObjectURL(file)
                         }
                         alt="CoverImage"
                         fill
@@ -258,6 +264,7 @@ const BookModal = ({ book, title, open, setOpen }: props) => {
                     setField={setForm}
                     title="Genre"
                     type="text"
+                    pattern="^[a-zA-Z\s]+$"
                     value={formInfo}
                     placeholder="Add Genre"
                     required
